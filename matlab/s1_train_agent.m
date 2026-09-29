@@ -55,10 +55,31 @@ result = train(agent, env, trainOpts);
 fprintf("Done after %d episodes (%.0f s), average reward %.1f\n", ...
     numel(result.EpisodeReward), toc, result.AverageReward(end));
 
-% Deterministic evaluation, as it will be deployed.
+% ---- add observation limits to the trained agent ---------------------------
+% getAction clips the observation to these limits BEFORE the network sees it
+% (the "ObservationBounder" in the generated code). That clipping is part of
+% the policy but not part of the actor network, so a plain ONNX export of the
+% network loses it (see s5 and docs/why-not-onnx.md).
+% The limits are added after training because train() requires the agent's
+% observation spec to match the environment's, and the predefined environment
+% does not allow changing its spec. The network weights stay untouched.
+limSpec = rlNumericSpec(obsInfo.Dimension, ...
+    LowerLimit = [-2.4; -2; -0.21; -2], UpperLimit = [2.4; 2; 0.21; 2]);
+limSpec.Name = obsInfo.Name;
+limSpec.Description = obsInfo.Description;
+
+actorNet  = getModel(getActor(agent));
+criticNet = getModel(getCritic(agent));
+actor  = rlContinuousGaussianActor(actorNet, limSpec, actInfo, ...
+    ActionMeanOutputNames = actorNet.OutputNames{1}, ...
+    ActionStandardDeviationOutputNames = actorNet.OutputNames{2}, ...
+    ObservationInputNames = actorNet.InputNames{1});
+critic = rlValueFunction(criticNet, limSpec);
+agent  = rlPPOAgent(actor, critic, agent.AgentOptions);
+
+% Deterministic evaluation of the agent as deployed (with limits).
 agent.UseExplorationPolicy = false;
-sim_out = sim(env, agent, rlSimulationOptions(MaxSteps = 500));
-ret = sum(sim_out.Reward.Data);
+[~, ret] = rollout_cartpole(agent, env, 0, 500);
 fprintf("Deterministic rollout return: %.0f / 500\n", ret);
 assert(ret > 400, "Agent did not learn to balance. Re-run with another seed.");
 

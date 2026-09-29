@@ -3,6 +3,18 @@
   "agent_class": "rl.agent.rlPPOAgent",
   "obs_dim": 4,
   "act_dim": 1,
+  "obs_lower": [
+    -2.4,
+    -2,
+    -0.21,
+    -2
+  ],
+  "obs_upper": [
+    2.4,
+    2,
+    0.21,
+    2
+  ],
   "obs_dtype": "float32",
   "act_dtype": "float64",
   "action_is_return_value": true,

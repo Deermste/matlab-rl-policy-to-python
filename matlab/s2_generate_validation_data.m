@@ -17,10 +17,12 @@ outDir = fullfile(root, "artifacts", "validation");
 if ~isfolder(outDir), mkdir(outDir); end
 
 % ---- configuration ---------------------------------------------------------
-% CartPole observations are unbounded (+-Inf), so the sampling box is chosen
-% by hand: [x; dx; theta; dtheta]. theta is +-0.21 rad (the failure angle).
-sampleLow  = [-2.4; -3; -0.21; -3];
-sampleHigh = [ 2.4;  3;  0.21;  3];
+% The box is wider than the agent's observation limits (s1), so part of the
+% samples is clipped by the policy's ObservationBounder. That is deliberate: it
+% tests the part of the policy that lives outside the network.
+% Order: [x; dx; theta; dtheta]
+sampleLow  = [-3; -3; -0.3; -3];
+sampleHigh = [ 3;  3;  0.3;  3];
 nBox        = 300;
 nTrajEpisodes = 10;
 % ----------------------------------------------------------------------------
@@ -40,19 +42,14 @@ Obox = sampleLow.' + rand(nBox, obsDim) .* (sampleHigh - sampleLow).';
 writeSet(agent, Obox, fullfile(outDir, "box"));
 
 % ---- trajectory samples ----------------------------------------------------
-% Simulate with exploration ON so the trajectories leave the equilibrium and
-% visit a broader set of states. The reference actions below are still
-% computed with the deterministic policy.
+% Step the environment with the deterministic policy plus action noise, so the
+% trajectories leave the equilibrium and visit a broader set of states. The
+% reference actions are computed without noise.
 env = rlPredefinedEnv("CartPole-Continuous");
-agent.UseExplorationPolicy = true;
 Otraj = zeros(0, obsDim);
 for k = 1:nTrajEpisodes
-    out = sim(env, agent, rlSimulationOptions(MaxSteps = 500));
-    ch  = fieldnames(out.Observation);
-    d   = squeeze(out.Observation.(ch{1}).Data);      % obsDim x T
-    Otraj = [Otraj; d.']; %#ok<AGROW>
+    Otraj = [Otraj; rollout_cartpole(agent, env, 3, 500)]; %#ok<AGROW>
 end
-agent.UseExplorationPolicy = false;
 writeSet(agent, Otraj, fullfile(outDir, "trajectory"));
 
 function writeSet(agent, O, prefix)
