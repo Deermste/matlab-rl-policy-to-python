@@ -1,0 +1,8 @@
+* text=auto
+*.mat binary
+*.dll binary
+*.so binary
+*.onnx binary
+*.csv text eol=lf
+*.m text eol=lf
+*.py text eol=lf
