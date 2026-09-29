@@ -24,3 +24,4 @@ libgcc_s*
 Thumbs.db
 .vscode/
 .idea/
+.venv/

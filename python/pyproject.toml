@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matlab-policy"
+version = "0.1.0"
+description = "Run MATLAB Coder-compiled RL policies from Python via ctypes and validate them against getAction"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+onnx = ["onnxruntime"]
+test = ["pytest"]
+
+[project.scripts]
+matlab-policy-validate = "matlab_policy.validate:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
