@@ -1,0 +1,29 @@
+name: python-tests
+
+# Validates the checked-in policy libraries (artifacts/win64, artifacts/linux64)
+# against the MATLAB reference data. MATLAB is not needed for this.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e "python[test,onnx]"
+      - name: Unit tests and equivalence tests
+        run: python -m pytest python -v
+      - name: Validation CLI
+        run: python -m matlab_policy.validate
+      - name: ONNX vs compiled library
+        run: python python/examples/02_onnx_vs_codegen.py
