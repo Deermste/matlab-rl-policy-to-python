@@ -1,0 +1,11 @@
+{
+  "matlab_release": "R2026a",
+  "agent_class": "rl.agent.rlPPOAgent",
+  "obs_dim": 4,
+  "act_dim": 1,
+  "obs_dtype": "float32",
+  "act_dtype": "float64",
+  "action_is_return_value": true,
+  "signature": "EVALUATEPOLICY_DLL_EXPORT extern double evaluatePolicy(const float observation1[4]);",
+  "library": "evaluatePolicy.dll"
+}
